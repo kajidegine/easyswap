@@ -1551,7 +1551,7 @@
 
         // --- Drawing ---
 
-        function draw() {
+        async function draw() {
             if (!state.image) return;
 
             // Set canvas size
@@ -1563,7 +1563,23 @@
 
             // Draw Watermarks
             if (state.logoEnabled && state.watermarks.length > 0) {
-                state.watermarks.forEach(wm => {
+                // Preload all images first
+                const imagePromises = state.watermarks
+                    .filter(wm => wm.type === 'image')
+                    .map(wm => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => resolve({ wm, img });
+                            img.onerror = reject;
+                            img.src = wm.content;
+                        });
+                    });
+
+                const loadedImages = await Promise.all(imagePromises);
+                const imageMap = new Map(loadedImages.map(({ wm, img }) => [wm.id, img]));
+
+                // Draw all watermarks
+                for (const wm of state.watermarks) {
                     const x = wm.x * state.targetWidth;
                     const y = wm.y * state.targetHeight;
                     const w = wm.w * state.targetWidth;
@@ -1575,7 +1591,7 @@
                         // Text drawing
                         ctx.globalAlpha = wm.style.opacity;
                         ctx.fillStyle = wm.style.color;
-                        ctx.font = `400 ${h * 0.8}px ${wm.style.font.replace(/'/g, '')}`; // Approx height
+                        ctx.font = `400 ${h * 0.8}px ${wm.style.font.replace(/'/g, '')}`;
                         ctx.textBaseline = 'middle';
                         ctx.textAlign = 'center';
 
@@ -1591,19 +1607,16 @@
 
                         ctx.fillText(wm.content, cx, cy);
                     } else if (wm.type === 'image') {
-                        // Image drawing
-                        const img = new Image();
-                        img.src = wm.content;
-                        // Note: Image loading is async. If it's not cached, it might blink.
-                        // But since we loaded it in the editor, it should be in memory/cache.
-                        // For robustness, we should pre-load or check.
-                        // `drawImage` handles it if loaded.
-                        ctx.globalAlpha = wm.style.opacity;
-                        ctx.drawImage(img, x, y, w, h);
+                        // Image drawing - use preloaded image
+                        const img = imageMap.get(wm.id);
+                        if (img) {
+                            ctx.globalAlpha = wm.style.opacity;
+                            ctx.drawImage(img, x, y, w, h);
+                        }
                     }
 
                     ctx.restore();
-                });
+                }
             }
 
             // Update info
@@ -1625,7 +1638,10 @@
         }
 
         // Download
-        downloadBtn.addEventListener('click', () => {
+        downloadBtn.addEventListener('click', async () => {
+            // Ensure canvas is fully drawn
+            await draw();
+
             const link = document.createElement('a');
             let ext = state.format.split('/')[1];
             if (ext === 'jpeg') ext = 'jpg';
