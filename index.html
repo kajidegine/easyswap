@@ -820,7 +820,7 @@
                     logoToggle.checked = false;
 
                     emptyState.classList.add('hidden');
-                    actionPanel.classList.remove('hidden');
+                    actionPanel.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
                     draw();
                     updateSizeEstimate();
                     saveState();
@@ -1639,15 +1639,37 @@
 
         // Download
         downloadBtn.addEventListener('click', async () => {
-            // Ensure canvas is fully drawn
-            await draw();
+            try {
+                // Check if image exists
+                if (!state.image) {
+                    alert('画像をアップロードしてください。');
+                    return;
+                }
 
-            const link = document.createElement('a');
-            let ext = state.format.split('/')[1];
-            if (ext === 'jpeg') ext = 'jpg';
-            link.download = `processed_image.${ext}`;
-            link.href = canvas.toDataURL(state.format, state.quality);
-            link.click();
+                // Ensure canvas is fully drawn
+                await draw();
+
+                // Create download link
+                const link = document.createElement('a');
+                let ext = state.format.split('/')[1];
+                if (ext === 'jpeg') ext = 'jpg';
+                link.download = `processed_image.${ext}`;
+
+                // Get canvas data
+                try {
+                    link.href = canvas.toDataURL(state.format, state.quality);
+                } catch (e) {
+                    console.error('Canvas toDataURL error:', e);
+                    alert('画像の生成に失敗しました。別の形式を試してください。');
+                    return;
+                }
+
+                // Trigger download
+                link.click();
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('ダウンロードに失敗しました: ' + error.message);
+            }
         });
     </script>
 </body>
