@@ -124,13 +124,14 @@
         /* Resize Handles */
         .resize-handle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             background: white;
-            border: 1px solid #8b5cf6;
+            border: 2px solid #8b5cf6;
             border-radius: 50%;
             display: none;
             z-index: 11;
+            pointer-events: auto;
         }
 
         .watermark-element.selected .resize-handle {
@@ -138,26 +139,26 @@
         }
 
         .handle-tl {
-            top: -5px;
-            left: -5px;
+            top: -7px;
+            left: -7px;
             cursor: nwse-resize;
         }
 
         .handle-tr {
-            top: -5px;
-            right: -5px;
+            top: -7px;
+            right: -7px;
             cursor: nesw-resize;
         }
 
         .handle-bl {
-            bottom: -5px;
-            left: -5px;
+            bottom: -7px;
+            left: -7px;
             cursor: nesw-resize;
         }
 
         .handle-br {
-            bottom: -5px;
-            right: -5px;
+            bottom: -7px;
+            right: -7px;
             cursor: nwse-resize;
         }
 
@@ -268,6 +269,7 @@
                                 <option value="0.9" selected>高画質 (90%) - 推奨</option>
                                 <option value="0.8">中画質 (80%)</option>
                                 <option value="0.6">低画質 (60%)</option>
+                                <option value="0.5">低画質 (50%) - 容量節約</option>
                             </select>
                         </div>
 
@@ -321,7 +323,7 @@
                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                                     </path>
                                 </svg>
-                                編集・レイアウト (Edit Layout)
+                                編集・レイアウト<br class="hidden lg:block">(Edit Layout)
                             </button>
                             <input type="file" id="logo-input" class="hidden" accept="image/*">
                         </div>
@@ -402,14 +404,12 @@
                 <!-- Modal Body -->
                 <div class="flex-1 flex flex-col overflow-hidden">
                     <!-- Top: Canvas Area (Preview) -->
-                    <div class="flex-1 bg-gray-900 overflow-hidden flex items-center justify-center p-4 relative min-h-0"
-                        id="editor-workspace">
+                    <div id="editor-workspace" class="flex-1 bg-gray-900 overflow-hidden relative min-h-0">
                         <!-- The Container that holds Image + Overlays -->
-                        <div id="preview-container"
-                            class="relative shadow-2xl select-none max-w-full max-h-full inline-flex items-center justify-center">
+                        <div id="preview-container" class="absolute inset-0 flex items-center justify-center p-4">
                             <!-- Main Image -->
                             <img id="editor-bg-image" class="block object-contain" draggable="false"
-                                style="max-width: 100%; max-height: 100%; width: auto; height: auto;">
+                                style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;">
                             <!-- Overlay Layer -->
                             <div id="overlay-layer" class="absolute inset-0 overflow-hidden">
                                 <!-- Watermarks will be injected here -->
@@ -459,15 +459,15 @@
                                 <div id="prop-text-group">
                                     <label class="block text-xs font-bold text-gray-500 mb-1">テキスト内容</label>
                                     <textarea id="prop-text" rows="2"
-                                        class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
+                                        class="w-full border border-gray-300 rounded p-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
                                 </div>
 
                                 <!-- Font -->
                                 <div id="prop-font-group">
-                                    <label class="block text-xs font-bold text-gray-500 mb-1">フォント & サイズ</label>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">フォント</label>
                                     <div class="flex gap-2">
                                         <select id="prop-font"
-                                            class="flex-1 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-sans">
+                                            class="flex-1 border border-gray-300 rounded p-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:outline-none font-sans">
                                             <optgroup label="日本語 (Japanese)">
                                                 <option value="'Noto Sans JP', sans-serif">Noto Sans (ゴシック)</option>
                                                 <option value="'Noto Serif JP', serif">Noto Serif (明朝)</option>
@@ -480,69 +480,22 @@
                                                 <option value="'Lato', sans-serif">Lato</option>
                                             </optgroup>
                                         </select>
-                                        <select id="prop-font-size"
-                                            class="w-24 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                                            <option value="8">8 pt</option>
-                                            <option value="9">9 pt</option>
-                                            <option value="10">10 pt</option>
-                                            <option value="11">11 pt</option>
-                                            <option value="12">12 pt</option>
-                                            <option value="14">14 pt</option>
-                                            <option value="16">16 pt</option>
-                                            <option value="18">18 pt</option>
-                                            <option value="20">20 pt</option>
-                                        </select>
                                     </div>
                                 </div>
 
-                                <!-- Position -->
+                                <!-- Font Size -->
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 mb-1">配置</label>
-                                    <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2 rounded border border-gray-200">
-                                        <!-- Top -->
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="tl" title="左上">
-                                            <div class="w-2 h-2 border-t-2 border-l-2 border-gray-400"></div>
-                                        </button>
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="tc" title="中上">
-                                            <div class="w-2 h-2 border-t-2 border-gray-400"></div>
-                                        </button>
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="tr" title="右上">
-                                            <div class="w-2 h-2 border-t-2 border-r-2 border-gray-400"></div>
-                                        </button>
-
-                                        <!-- Middle -->
-                                        <div></div>
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="c" title="中央">
-                                            <div class="w-2 h-2 border-2 border-gray-400 rounded-sm"></div>
-                                        </button>
-                                        <div></div>
-
-                                        <!-- Bottom -->
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="bl" title="左下">
-                                            <div class="w-2 h-2 border-b-2 border-l-2 border-gray-400"></div>
-                                        </button>
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="bc" title="中下">
-                                            <div class="w-2 h-2 border-b-2 border-gray-400"></div>
-                                        </button>
-                                        <button
-                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
-                                            data-pos="br" title="右下">
-                                            <div class="w-2 h-2 border-b-2 border-r-2 border-gray-400"></div>
-                                        </button>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">サイズ (pt)</label>
+                                    <div class="flex gap-2 items-center">
+                                        <input type="range" id="prop-font-size-slider" min="20" max="100" value="20"
+                                            class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600">
+                                        <input type="number" id="prop-font-size" min="20" max="100" value="20"
+                                            class="w-20 border border-gray-300 rounded p-2 text-sm text-gray-800 focus:ring-2 focus:ring-purple-500 focus:outline-none">
                                     </div>
                                 </div>
+
+                                <!-- Position (REMOVED as requested) -->
+                                <!-- <div> ... </div> -->
 
                                 <!-- Color & Opacity -->
                                 <div class="grid grid-cols-2 gap-3">
@@ -558,7 +511,7 @@
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 mb-1">不透明度</label>
                                         <input type="number" id="prop-opacity" min="0" max="1" step="0.1"
-                                            class="w-full border border-gray-300 rounded p-2 text-sm">
+                                            class="w-full border border-gray-300 rounded p-2 text-sm text-gray-800">
                                     </div>
                                 </div>
 
@@ -863,6 +816,11 @@
                     widthInput.value = state.targetWidth;
                     heightInput.value = state.targetHeight;
 
+                    // Reset Watermarks/Logo State
+                    state.watermarks = [];
+                    state.logoEnabled = false;
+                    logoToggle.checked = false;
+
                     emptyState.classList.add('hidden');
                     actionPanel.classList.remove('hidden');
                     draw();
@@ -962,24 +920,56 @@
             overlayLayer.innerHTML = '';
 
             // Render existing watermarks
-            state.watermarks.forEach((wm, index) => {
-                const el = createWatermarkElement(wm, index);
-                el.dataset.wm = JSON.stringify(wm);
+            state.watermarks.forEach((wm) => {
+                createWatermarkElement(wm, wm.id); // Pass wm.id
             });
 
             deselectAll();
+            requestAnimationFrame(updateOverlayDimensions);
         }
 
         function createWatermarkElement(wm, id) {
             const el = document.createElement('div');
             el.className = 'watermark-element';
             el.dataset.id = id;
+            el.dataset.wm = JSON.stringify(wm);
+            el.style.pointerEvents = 'auto';
 
             // Initial Style (Percentage to Absolute for Editor)
             el.style.left = `${wm.x * 100}%`;
             el.style.top = `${wm.y * 100}%`;
             el.style.width = `${wm.w * 100}%`;
             el.style.height = `${wm.h * 100}%`;
+
+            // Delete Button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '✕';
+            deleteBtn.style.cssText = `
+                position: absolute;
+                top: -12px;
+                right: -12px;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: #ef4444;
+                color: white;
+                border: 2px solid white;
+                font-size: 14px;
+                font-weight: bold;
+                cursor: pointer;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                el.remove();
+                deselectAll();
+            });
+            el.appendChild(deleteBtn);
 
             // Content
             if (wm.type === 'text') {
@@ -989,8 +979,13 @@
                 inner.style.fontFamily = wm.style.font;
                 inner.style.color = wm.style.color;
                 inner.style.opacity = wm.style.opacity;
-                inner.style.fontSize = '100px'; // Base size
-                inner.style.transform = 'scale(1)'; // Placeholder
+                inner.style.fontSize = '100px';
+                inner.style.transform = 'scale(1)';
+                if (wm.style.neon) {
+                    inner.style.textShadow = `0 0 ${wm.style.neonBlur}px ${wm.style.neonColor}`;
+                } else {
+                    inner.style.textShadow = 'none';
+                }
 
                 el.appendChild(inner);
                 updateTextSize(el, inner);
@@ -1027,54 +1022,96 @@
             });
         }
 
+        function addWatermark(wm) {
+            const el = createWatermarkElement(wm, wm.id);
+            selectElement(el);
+        }
+
         // Add Text
         addTextBtn.addEventListener('click', () => {
+            const id = Date.now().toString();
+            // Default to Bottom Right
+            // x, y, w, h are in %
+            // Default size might be small, let's say 20% width? or auto.
+            // Text doesn't have fixed ratio initially but we track box w/h.
+
+            // To spawn at bottom right with margin:
+            // x = 0.95 - w? But w is unknown until render.
+            // Let's assume a default reasonable size or dynamic.
+            // For simplicity, spawn at bottom right (approx).
+
             const wm = {
+                id,
                 type: 'text',
-                x: 0.4, y: 0.4, w: 0.2, h: 0.1,
-                content: 'Copyright',
+                content: 'Text', // Generic
+                x: 0.5 - 0.125, // Center
+                y: 0.5 - 0.05,
+                w: 0.25,
+                h: 0.10,
                 style: {
                     font: "'Noto Sans JP', sans-serif",
                     color: '#ffffff',
-                    opacity: 1.0,
+                    opacity: 1,
                     neon: false,
                     neonBlur: 10,
-                    neonColor: '#00ffff'
+                    neonColor: '#ff00ff',
+                    fontSizePt: 12
                 }
             };
-            const el = createWatermarkElement(wm, Date.now()); // Use timestamp as temp ID
-            el.dataset.wm = JSON.stringify(wm);
-            selectElement(el);
+            addWatermark(wm);
         });
 
-        // Add Image
-        addImageBtn.addEventListener('click', () => logoInput.click());
+        addImageBtn.addEventListener('click', () => {
+            logoInput.click();
+        });
+
         logoInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                const file = e.target.files[0];
+            const file = e.target.files[0];
+            if (file) {
                 const reader = new FileReader();
-                reader.onload = (evt) => {
-                    const wm = {
-                        type: 'image',
-                        x: 0.4, y: 0.4, w: 0.2, h: 0.2, // Default square
-                        content: evt.target.result,
-                        style: { opacity: 1.0 }
+                reader.onload = (ev) => {
+                    // Load image to get natural dimensions
+                    const img = new Image();
+                    img.onload = () => {
+                        const id = Date.now().toString();
+                        const aspectRatio = img.naturalWidth / img.naturalHeight;
+
+                        const wm = {
+                            id,
+                            type: 'image',
+                            content: ev.target.result,
+                            x: 0.5 - 0.1,
+                            y: 0.5 - 0.1,
+                            w: 0.20,
+                            h: 0.20,
+                            aspectRatio: aspectRatio, // Store original aspect ratio
+                            style: {
+                                opacity: 1
+                            }
+                        };
+                        addWatermark(wm);
+
+                        setTimeout(() => {
+                            const el = document.querySelector(`.watermark-element[data-id="${id}"]`);
+                            if (el) selectElement(el);
+                        }, 0);
                     };
-                    const el = createWatermarkElement(wm, Date.now());
-                    el.dataset.wm = JSON.stringify(wm);
-                    selectElement(el);
+                    img.src = ev.target.result;
                 };
                 reader.readAsDataURL(file);
             }
-            // Reset input
             logoInput.value = '';
         });
 
-        // Selection
+        // Selection Function
         function selectElement(el) {
             deselectAll();
             el.classList.add('selected');
             activeElementId = el.dataset.id;
+
+            // Show delete button on selected element
+            const deleteBtn = el.querySelector('.delete-btn');
+            if (deleteBtn) deleteBtn.style.display = 'flex';
 
             // Show properties
             propertiesEmpty.classList.add('hidden');
@@ -1090,19 +1127,11 @@
                 propNeonGroup.classList.remove('hidden');
 
                 propText.value = wm.content;
-                propText.value = wm.content;
                 propFont.value = wm.style.font;
-                // Calculate approximate pt size from height %
-                // h is % of targetHeight. 
-                // font px = h * targetHeight * 0.8
-                // Let's just store/retrieve the 'pt' if we have it, or estimate.
-                // For now, let's just default to 12 or estimate.
-                // Since we don't store 'pt' explicitly yet, we can try to estimate or just show nearest.
-                // Better: store 'pt' in wm.style.fontSizePt if available.
                 if (wm.style.fontSizePt) {
                     propFontSize.value = wm.style.fontSizePt;
                 } else {
-                    propFontSize.value = "12"; // Default
+                    propFontSize.value = "12";
                 }
                 propColor.value = wm.style.color;
                 propColorHex.textContent = wm.style.color;
@@ -1122,8 +1151,13 @@
             }
         }
 
+
         function deselectAll() {
-            document.querySelectorAll('.watermark-element').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.watermark-element').forEach(el => {
+                el.classList.remove('selected');
+                const deleteBtn = el.querySelector('.delete-btn');
+                if (deleteBtn) deleteBtn.style.display = 'none';
+            });
             activeElementId = null;
             propertiesPanel.classList.add('hidden');
             propertiesEmpty.classList.remove('hidden');
@@ -1185,50 +1219,46 @@
 
         propText.addEventListener('input', (e) => updateActiveElement('content', e.target.value));
         propFont.addEventListener('change', (e) => updateActiveElement('font', e.target.value, true));
-        propFontSize.addEventListener('change', (e) => {
-            const pt = parseInt(e.target.value);
-            updateActiveElement('fontSizePt', pt, true);
 
-            // Update height based on pt
-            // 1pt approx 1.33px. Let's assume 1pt = 1.33px for screen, but for image?
-            // Let's treat 'pt' as a relative size unit where 12pt is "standard".
-            // If we assume 1920px width is "standard screen", maybe 12pt is ~16px?
-            // Let's use a simple multiplier. 
-            // If we want 20pt to be visible on 1920px image, it should be around 26px height?
-            // Let's say heightPx = pt * 1.5 (arbitrary but reasonable for display).
-            // Actually, let's just use the value as px directly scaled.
-            // If user selects 20, we make the box height such that font size is 20px (relative to image).
-            // ctx.font = h * 0.8. So h = fontSize / 0.8.
-            // If fontSize = 20px, h = 25px.
-            // So we set height % = 25 / targetHeight.
+        // Font Size Slider
+        const propFontSizeSlider = document.getElementById('prop-font-size-slider');
+
+        // Sync slider to number input
+        propFontSizeSlider.addEventListener('input', (e) => {
+            propFontSize.value = e.target.value;
+            propFontSize.dispatchEvent(new Event('change'));
+        });
+
+        // Sync number input to slider
+        propFontSize.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value) || 20;
+            const clamped = Math.max(20, Math.min(100, val));
+            propFontSizeSlider.value = clamped;
+        });
+
+        propFontSize.addEventListener('change', (e) => {
+            const pt = parseInt(e.target.value) || 20;
+            const clamped = Math.max(20, Math.min(100, pt));
+            e.target.value = clamped;
+            propFontSizeSlider.value = clamped;
+
+            updateActiveElement('fontSizePt', clamped, true);
 
             if (activeElementId && state.targetHeight > 0) {
-                const hPx = pt / 0.8;
+                const hPx = clamped / 0.8;
                 const hPct = hPx / state.targetHeight;
-
-                // We also need to adjust width to maintain aspect ratio of text
-                // But text width is dynamic. 
-                // We update height, and let the width auto-adjust? 
-                // Currently width is manual.
-                // For text, we usually want auto-width.
-                // Let's update height, and then force a redraw/remeasure?
 
                 const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
                 if (el) {
                     const wm = JSON.parse(el.dataset.wm);
                     wm.h = hPct;
-                    wm.style.fontSizePt = pt;
+                    wm.style.fontSizePt = clamped;
                     el.dataset.wm = JSON.stringify(wm);
                     el.style.height = `${hPct * 100}%`;
 
-                    // Auto-width adjustment for text
                     const inner = el.querySelector('.watermark-text');
                     if (inner) {
                         updateTextSize(el, inner);
-                        // We might need to adjust width to fit text?
-                        // For now, let's just set height. The text might overflow width if width is too small.
-                        // Ideally we should expand width.
-                        // Let's leave width as is for now, user can resize.
                     }
                 }
             }
@@ -1340,20 +1370,68 @@
                 el.style.left = `${leftPct * 100}%`;
                 el.style.top = `${topPct * 100}%`;
             } else if (isResizing) {
+                const wm = JSON.parse(el.dataset.wm);
+                const isImage = wm.type === 'image';
+
                 let newW = initialWidth;
                 let newH = initialHeight;
                 let newL = initialLeft;
                 let newT = initialTop;
 
-                if (resizeHandle.includes('r')) newW = initialWidth + dx;
-                if (resizeHandle.includes('l')) {
-                    newW = initialWidth - dx;
-                    newL = initialLeft + dx;
-                }
-                if (resizeHandle.includes('b')) newH = initialHeight + dy;
-                if (resizeHandle.includes('t')) {
-                    newH = initialHeight - dy;
-                    newT = initialTop + dy;
+                if (isImage) {
+                    // Use stored aspect ratio if available, otherwise calculate from current dimensions
+                    const aspectRatio = wm.aspectRatio || (initialWidth / initialHeight);
+
+                    if (resizeHandle.includes('r')) {
+                        newW = initialWidth + dx;
+                        newH = newW / aspectRatio;
+                    } else if (resizeHandle.includes('l')) {
+                        newW = initialWidth - dx;
+                        newH = newW / aspectRatio;
+                        newL = initialLeft + dx;
+                    } else if (resizeHandle.includes('b')) {
+                        newH = initialHeight + dy;
+                        newW = newH * aspectRatio;
+                    } else if (resizeHandle.includes('t')) {
+                        newH = initialHeight - dy;
+                        newW = newH * aspectRatio;
+                        newT = initialTop + dy;
+                    }
+
+                    // For corner handles, use the larger dimension change
+                    if (resizeHandle.includes('r') && resizeHandle.includes('b')) {
+                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
+                        newW = initialWidth + dMax;
+                        newH = newW / aspectRatio;
+                    } else if (resizeHandle.includes('l') && resizeHandle.includes('t')) {
+                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
+                        newW = initialWidth + dMax;
+                        newH = newW / aspectRatio;
+                        newL = initialLeft - dMax;
+                        newT = initialTop - (newH - initialHeight);
+                    } else if (resizeHandle.includes('r') && resizeHandle.includes('t')) {
+                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
+                        newW = initialWidth + dMax;
+                        newH = newW / aspectRatio;
+                        newT = initialTop - (newH - initialHeight);
+                    } else if (resizeHandle.includes('l') && resizeHandle.includes('b')) {
+                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
+                        newW = initialWidth + dMax;
+                        newH = newW / aspectRatio;
+                        newL = initialLeft - dMax;
+                    }
+                } else {
+                    // Free resize for text
+                    if (resizeHandle.includes('r')) newW = initialWidth + dx;
+                    if (resizeHandle.includes('l')) {
+                        newW = initialWidth - dx;
+                        newL = initialLeft + dx;
+                    }
+                    if (resizeHandle.includes('b')) newH = initialHeight + dy;
+                    if (resizeHandle.includes('t')) {
+                        newH = initialHeight - dy;
+                        newT = initialTop + dy;
+                    }
                 }
 
                 // Min size
@@ -1391,6 +1469,80 @@
                     el.dataset.wm = JSON.stringify(wm);
                 }
             }
+        }
+
+
+        function updateOverlayDimensions() {
+            if (!state.image) return;
+            // Get image render rect
+            // Since object-fit: contain is used, we need to calculate the actual rendered size.
+            // Or use a trick: editorBgImage.width / height properties usually return rendered size if natural size is larger?
+            // No, getting dimensions of object-fit image is tricky.
+            // Reliable way: Calculate aspect ratios.
+
+            const nw = state.image.naturalWidth;
+            const nh = state.image.naturalHeight;
+            const ratio = nw / nh;
+
+            // Available width/height in previewContainer (it's inset-0 of workspace)
+            // workspace has no padding? It has p-4.
+            // previewContainer is absolute inset-0. It covers padding?
+            // If workspace is relative, absolute child is relative to padding box? No, border box usually unless specified.
+            // Let's assume previewContainer gets full size of workspace.
+
+            const cw = previewContainer.clientWidth - 32; // -32 for p-4 padding if it applies to inner content constraint
+            const ch = previewContainer.clientHeight - 32;
+
+            // Calculate fitted dimensions
+            let rw = cw;
+            let rh = cw / ratio;
+
+            if (rh > ch) {
+                rh = ch;
+                rw = ch * ratio;
+            }
+
+            // Set overlay layer size
+            overlayLayer.style.position = 'absolute';
+            overlayLayer.style.left = '50%';
+            overlayLayer.style.top = '50%';
+            overlayLayer.style.transform = 'translate(-50%, -50%)';
+            overlayLayer.style.width = `${rw}px`;
+            overlayLayer.style.height = `${rh}px`;
+        }
+
+        // Call this on resize
+        const resizeObserver = new ResizeObserver(() => {
+            requestAnimationFrame(updateOverlayDimensions);
+        });
+        resizeObserver.observe(editorWorkspace);
+
+
+
+        // Fix Submit
+        confirmCreatorBtn.addEventListener('click', () => {
+            saveEditorToState();
+            state.logoEnabled = true; // Force enable if they edited
+            logoToggle.checked = true; // Update toggle UI
+            creatorModal.classList.add('hidden');
+            draw(); // Update preview
+            saveState();
+        });
+
+        // Save State
+        function saveEditorToState() {
+            state.watermarks = [];
+            const elements = overlayLayer.querySelectorAll('.watermark-element');
+            elements.forEach(el => {
+                if (el.dataset.wm) {
+                    try {
+                        const wm = JSON.parse(el.dataset.wm);
+                        state.watermarks.push(wm);
+                    } catch (e) {
+                        console.error('Failed to parse watermark', e);
+                    }
+                }
+            });
         }
 
         // --- Drawing ---
