@@ -1382,7 +1382,36 @@
                     // Use stored aspect ratio if available, otherwise calculate from current dimensions
                     const aspectRatio = wm.aspectRatio || (initialWidth / initialHeight);
 
-                    if (resizeHandle.includes('r')) {
+                    // For corner handles, use diagonal distance for more intuitive scaling
+                    if (resizeHandle === 'br') {
+                        // Bottom-right: grow with diagonal movement
+                        const diagonal = Math.sqrt(dx * dx + dy * dy);
+                        const sign = (dx + dy) >= 0 ? 1 : -1;
+                        newW = initialWidth + (sign * diagonal);
+                        newH = newW / aspectRatio;
+                    } else if (resizeHandle === 'tl') {
+                        // Top-left: grow with diagonal movement (inverted)
+                        const diagonal = Math.sqrt(dx * dx + dy * dy);
+                        const sign = (dx + dy) <= 0 ? 1 : -1;
+                        newW = initialWidth + (sign * diagonal);
+                        newH = newW / aspectRatio;
+                        newL = initialLeft - (newW - initialWidth);
+                        newT = initialTop - (newH - initialHeight);
+                    } else if (resizeHandle === 'tr') {
+                        // Top-right: grow with diagonal movement
+                        const diagonal = Math.sqrt(dx * dx + dy * dy);
+                        const sign = (dx - dy) >= 0 ? 1 : -1;
+                        newW = initialWidth + (sign * diagonal);
+                        newH = newW / aspectRatio;
+                        newT = initialTop - (newH - initialHeight);
+                    } else if (resizeHandle === 'bl') {
+                        // Bottom-left: grow with diagonal movement
+                        const diagonal = Math.sqrt(dx * dx + dy * dy);
+                        const sign = (dy - dx) >= 0 ? 1 : -1;
+                        newW = initialWidth + (sign * diagonal);
+                        newH = newW / aspectRatio;
+                        newL = initialLeft - (newW - initialWidth);
+                    } else if (resizeHandle.includes('r')) {
                         newW = initialWidth + dx;
                         newH = newW / aspectRatio;
                     } else if (resizeHandle.includes('l')) {
@@ -1396,29 +1425,6 @@
                         newH = initialHeight - dy;
                         newW = newH * aspectRatio;
                         newT = initialTop + dy;
-                    }
-
-                    // For corner handles, use the larger dimension change
-                    if (resizeHandle.includes('r') && resizeHandle.includes('b')) {
-                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
-                        newW = initialWidth + dMax;
-                        newH = newW / aspectRatio;
-                    } else if (resizeHandle.includes('l') && resizeHandle.includes('t')) {
-                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
-                        newW = initialWidth + dMax;
-                        newH = newW / aspectRatio;
-                        newL = initialLeft - dMax;
-                        newT = initialTop - (newH - initialHeight);
-                    } else if (resizeHandle.includes('r') && resizeHandle.includes('t')) {
-                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
-                        newW = initialWidth + dMax;
-                        newH = newW / aspectRatio;
-                        newT = initialTop - (newH - initialHeight);
-                    } else if (resizeHandle.includes('l') && resizeHandle.includes('b')) {
-                        const dMax = Math.max(Math.abs(dx), Math.abs(dy));
-                        newW = initialWidth + dMax;
-                        newH = newW / aspectRatio;
-                        newL = initialLeft - dMax;
                     }
                 } else {
                     // Free resize for text
