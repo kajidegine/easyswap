@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasySwap | 画像リサイズ・ロゴ作成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Roboto:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            500: '#ec4899',
+                            600: '#db2777',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            /* Purple */
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        /* Custom Select Arrow */
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        .bg-checkered {
+            background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Gradient Text Utility */
+        .text-gradient {
+            background: linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bg-gradient-brand {
+            background: linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6);
+        }
+
+        /* Layout Editor CSS */
+        .watermark-element {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            box-sizing: border-box;
+            /* Border for hover/selection */
+            border: 1px solid transparent;
+        }
+
+        .watermark-element:hover {
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .watermark-element.selected {
+            border-color: #8b5cf6;
+            z-index: 10;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border: 1px solid #8b5cf6;
+            border-radius: 50%;
+            display: none;
+            z-index: 11;
+        }
+
+        .watermark-element.selected .resize-handle {
+            display: block;
+        }
+
+        .handle-tl {
+            top: -5px;
+            left: -5px;
+            cursor: nwse-resize;
+        }
+
+        .handle-tr {
+            top: -5px;
+            right: -5px;
+            cursor: nesw-resize;
+        }
+
+        .handle-bl {
+            bottom: -5px;
+            left: -5px;
+            cursor: nesw-resize;
+        }
+
+        .handle-br {
+            bottom: -5px;
+            right: -5px;
+            cursor: nwse-resize;
+        }
+
+        /* Text Element Specifics */
+        .watermark-text {
+            white-space: nowrap;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            font-weight: 400;
+        }
+
+        /* Image Element Specifics */
+        .watermark-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            /* Let clicks pass to container */
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans text-gray-900 bg-white">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-3 tracking-tighter text-gradient font-sans">Easy Swap</h1>
+            <p class="text-sm md:text-base font-bold text-gray-800 mb-1">画像リサイズ変換</p>
+            <p class="text-xs md:text-sm text-gray-400">サーバーアップなしで安全</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Panel: Settings & Upload -->
+        <div class="lg:col-span-4 space-y-6">
+
+            <!-- Settings Container -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-8">
+
+                <!-- 1. Size Settings -->
+                <section>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-8 h-8 rounded-full bg-gradient-brand text-white flex items-center justify-center font-bold shadow-md">
+                            1</div>
+                        <h2 class="text-lg font-bold text-gray-800">サイズ設定</h2>
+                    </div>
+                    <div class="space-y-3 pl-11">
+                        <select id="size-preset"
+                            class="w-full bg-gray-50 border border-gray-300 text-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition appearance-none cursor-pointer hover:bg-gray-100">
+                            <option value="1920,auto" selected>1920 px (FHD)</option>
+                            <option value="1080,auto">1080 px</option>
+                            <option value="640,auto">640 px</option>
+                            <option value="320,auto">320 px</option>
+                            <option value="custom">任意サイズ入力</option>
+                        </select>
+
+                        <!-- Custom Inputs (Hidden by default) -->
+                        <div id="custom-size-inputs" class="hidden grid-cols-2 gap-3 animate-fade-in">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">幅 (Width)</label>
+                                <input type="number" id="width-input"
+                                    class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">高さ (Height)</label>
+                                <input type="number" id="height-input"
+                                    class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                        </div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="aspect-ratio" checked
+                                class="rounded text-purple-600 focus:ring-purple-500 border-gray-300">
+                            <span class="text-sm text-gray-600">縦横比を固定</span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 2. Format Settings & Upload -->
+                <section>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-8 h-8 rounded-full bg-gradient-brand text-white flex items-center justify-center font-bold shadow-md">
+                            2</div>
+                        <h2 class="text-lg font-bold text-gray-800">保存形式・アップロード</h2>
+                    </div>
+                    <div class="space-y-4 pl-11">
+                        <select id="format-select"
+                            class="w-full bg-gray-50 border border-gray-300 text-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition appearance-none cursor-pointer hover:bg-gray-100">
+                            <option value="image/webp">WebP (軽量・高画質)</option>
+                            <option value="image/jpeg">JPEG (写真向き)</option>
+                            <option value="image/png">PNG (透過対応)</option>
+                            <option value="image/gif">GIF (静止画)</option>
+                        </select>
+
+                        <div id="quality-control">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">画質</label>
+                            <select id="quality-select"
+                                class="w-full bg-gray-50 border border-gray-300 text-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition appearance-none cursor-pointer hover:bg-gray-100">
+                                <option value="1.0">最高画質 (100%)</option>
+                                <option value="0.9" selected>高画質 (90%) - 推奨</option>
+                                <option value="0.8">中画質 (80%)</option>
+                                <option value="0.6">低画質 (60%)</option>
+                            </select>
+                        </div>
+
+                        <!-- Upload Zone (Moved here) -->
+                        <div id="drop-zone"
+                            class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-all duration-300 hover:border-purple-500 hover:bg-purple-50 cursor-pointer group shadow-sm mt-4">
+                            <input type="file" id="file-input" class="hidden" accept="image/*">
+                            <div
+                                class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <p class="text-base font-bold text-gray-700 mb-1">ここをタップ または ドラッグ</p>
+                            <p class="text-xs text-gray-500">複数の画像を変換・リサイズ</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Copyright & Logo Settings -->
+                <section>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-gradient-brand text-white flex items-center justify-center font-bold shadow-md">
+                                3</div>
+                            <h2 class="text-lg font-bold text-gray-800">コピーライト・ロゴ</h2>
+                        </div>
+                        <!-- Toggle -->
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="logo-toggle" class="sr-only peer">
+                            <div
+                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-brand">
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Accordion Content -->
+                    <div id="logo-section-content"
+                        class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-50 pointer-events-none">
+                        <div class="pl-11 pt-1">
+                            <p class="text-sm text-gray-600 mb-3">
+                                画像に文字やロゴを自由に追加・配置できます。
+                            </p>
+                            <button id="open-creator-btn"
+                                class="w-full flex items-center justify-center gap-2 bg-gradient-brand text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition shadow-md hover:shadow-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                    </path>
+                                </svg>
+                                編集・レイアウト (Edit Layout)
+                            </button>
+                            <input type="file" id="logo-input" class="hidden" accept="image/*">
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Right Panel: Preview -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            <div
+                class="bg-white rounded-xl p-1 flex-1 min-h-[500px] flex items-center justify-center relative overflow-hidden shadow-sm border border-gray-200 bg-checkered">
+                <!-- Canvas Container -->
+                <div class="relative max-w-full max-h-full p-4" id="canvas-container">
+                    <canvas id="preview-canvas" class="max-w-full max-h-[70vh] shadow-lg rounded-sm"></canvas>
+                    <div id="empty-state"
+                        class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                        <svg class="w-20 h-20 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        <p class="text-xl font-medium opacity-50">プレビューが表示されます</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 opacity-50 pointer-events-none transition-opacity flex flex-col gap-4"
+                id="action-panel">
+
+                <!-- Save Settings Toggle -->
+                <div class="flex justify-end items-center gap-3 border-b border-gray-100 pb-4">
+                    <span class="text-sm font-bold text-gray-600">設定を保存</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="save-settings-toggle" class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-brand">
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex flex-col items-center gap-3">
+                    <div class="text-sm text-gray-500 font-medium text-center">
+                        <span id="final-size">0 x 0</span> px • <span id="final-size-mb">0.00 MB</span> (概算)
+                    </div>
+                    <button id="download-btn"
+                        class="w-full bg-gradient-brand text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-purple-500/30 transition transform hover:scale-105 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        画像をダウンロード
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Layout Editor Modal -->
+    <div id="creator-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-backdrop"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div
+                class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-fade-in">
+
+                <!-- Modal Header -->
+                <div class="p-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
+                    <h3 class="font-bold text-lg text-transparent bg-clip-text bg-gradient-brand">レイアウト・エディター</h3>
+                    <div class="flex gap-2">
+                        <button id="cancel-creator-btn"
+                            class="px-4 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded transition text-sm">キャンセル</button>
+                        <button id="confirm-creator-btn"
+                            class="px-6 py-2 bg-gradient-brand text-white font-bold rounded hover:opacity-90 shadow-md transition text-sm">完了</button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Top: Canvas Area (Preview) -->
+                    <div class="flex-1 bg-gray-900 overflow-hidden flex items-center justify-center p-4 relative min-h-0"
+                        id="editor-workspace">
+                        <!-- The Container that holds Image + Overlays -->
+                        <div id="preview-container"
+                            class="relative shadow-2xl select-none max-w-full max-h-full inline-flex items-center justify-center">
+                            <!-- Main Image -->
+                            <img id="editor-bg-image" class="block object-contain" draggable="false"
+                                style="max-width: 100%; max-height: 100%; width: auto; height: auto;">
+                            <!-- Overlay Layer -->
+                            <div id="overlay-layer" class="absolute inset-0 overflow-hidden">
+                                <!-- Watermarks will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Tools Panel -->
+                    <div
+                        class="w-full h-auto max-h-[35vh] bg-white border-t border-gray-200 flex flex-col shrink-0 overflow-y-auto">
+                        <!-- Add Tools -->
+                        <div class="p-2 border-b border-gray-100">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">追加 (Add)</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="add-text-btn"
+                                    class="flex items-center justify-center gap-2 p-2 rounded-xl border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group">
+                                    <span class="font-serif text-lg text-gray-700 group-hover:text-purple-600">T</span>
+                                    <span
+                                        class="text-xs font-bold text-gray-600 group-hover:text-purple-600">文字を追加</span>
+                                </button>
+                                <button id="add-image-btn"
+                                    class="flex items-center justify-center gap-2 p-2 rounded-xl border border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition group">
+                                    <svg class="w-5 h-5 text-gray-500 group-hover:text-purple-600" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                    <span
+                                        class="text-xs font-bold text-gray-600 group-hover:text-purple-600">画像を追加</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Properties (Dynamic) -->
+                        <div id="properties-panel" class="p-4 flex-1 hidden">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">プロパティ</h4>
+                                <button id="delete-element-btn"
+                                    class="text-red-500 hover:text-red-700 text-xs font-bold">
+                                    削除
+                                </button>
+                            </div>
+
+                            <div class="space-y-5">
+                                <!-- Text Content -->
+                                <div id="prop-text-group">
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">テキスト内容</label>
+                                    <textarea id="prop-text" rows="2"
+                                        class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
+                                </div>
+
+                                <!-- Font -->
+                                <div id="prop-font-group">
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">フォント & サイズ</label>
+                                    <div class="flex gap-2">
+                                        <select id="prop-font"
+                                            class="flex-1 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-sans">
+                                            <optgroup label="日本語 (Japanese)">
+                                                <option value="'Noto Sans JP', sans-serif">Noto Sans (ゴシック)</option>
+                                                <option value="'Noto Serif JP', serif">Noto Serif (明朝)</option>
+                                                <option value="'Zen Maru Gothic', sans-serif">Zen Maru Gothic (丸ゴシック)
+                                                </option>
+                                            </optgroup>
+                                            <optgroup label="英語 (English)">
+                                                <option value="'Roboto', sans-serif">Roboto</option>
+                                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                                <option value="'Lato', sans-serif">Lato</option>
+                                            </optgroup>
+                                        </select>
+                                        <select id="prop-font-size"
+                                            class="w-24 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                            <option value="8">8 pt</option>
+                                            <option value="9">9 pt</option>
+                                            <option value="10">10 pt</option>
+                                            <option value="11">11 pt</option>
+                                            <option value="12">12 pt</option>
+                                            <option value="14">14 pt</option>
+                                            <option value="16">16 pt</option>
+                                            <option value="18">18 pt</option>
+                                            <option value="20">20 pt</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Position -->
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">配置</label>
+                                    <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2 rounded border border-gray-200">
+                                        <!-- Top -->
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="tl" title="左上">
+                                            <div class="w-2 h-2 border-t-2 border-l-2 border-gray-400"></div>
+                                        </button>
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="tc" title="中上">
+                                            <div class="w-2 h-2 border-t-2 border-gray-400"></div>
+                                        </button>
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="tr" title="右上">
+                                            <div class="w-2 h-2 border-t-2 border-r-2 border-gray-400"></div>
+                                        </button>
+
+                                        <!-- Middle -->
+                                        <div></div>
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="c" title="中央">
+                                            <div class="w-2 h-2 border-2 border-gray-400 rounded-sm"></div>
+                                        </button>
+                                        <div></div>
+
+                                        <!-- Bottom -->
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="bl" title="左下">
+                                            <div class="w-2 h-2 border-b-2 border-l-2 border-gray-400"></div>
+                                        </button>
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="bc" title="中下">
+                                            <div class="w-2 h-2 border-b-2 border-gray-400"></div>
+                                        </button>
+                                        <button
+                                            class="pos-btn h-8 bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 flex items-center justify-center"
+                                            data-pos="br" title="右下">
+                                            <div class="w-2 h-2 border-b-2 border-r-2 border-gray-400"></div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Color & Opacity -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div id="prop-color-group">
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">色</label>
+                                        <div class="flex items-center gap-2 border border-gray-300 rounded p-1">
+                                            <input type="color" id="prop-color"
+                                                class="h-6 w-6 rounded cursor-pointer border-0 p-0">
+                                            <span class="text-xs text-gray-500 font-mono"
+                                                id="prop-color-hex">#000000</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">不透明度</label>
+                                        <input type="number" id="prop-opacity" min="0" max="1" step="0.1"
+                                            class="w-full border border-gray-300 rounded p-2 text-sm">
+                                    </div>
+                                </div>
+
+                                <!-- Neon Effect -->
+                                <div id="prop-neon-group" class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                                        <span class="text-xs font-bold text-gray-800">⚡ ネオン効果</span>
+                                        <input type="checkbox" id="prop-neon"
+                                            class="rounded text-purple-600 focus:ring-purple-500">
+                                    </label>
+                                    <div id="neon-controls"
+                                        class="opacity-50 pointer-events-none transition-opacity space-y-2">
+                                        <div>
+                                            <label class="text-[10px] text-gray-500 block mb-1">ぼかし量</label>
+                                            <input type="range" id="prop-neon-blur" min="0" max="50"
+                                                class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <input type="color" id="prop-neon-color"
+                                                class="h-5 w-5 rounded cursor-pointer border-0 p-0">
+                                            <span class="text-[10px] text-gray-400">発光色</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State for Props -->
+                        <div id="properties-empty"
+                            class="p-8 text-center text-gray-400 flex flex-col items-center justify-center flex-1">
+                            <p class="text-sm">要素を選択すると<br>プロパティが表示されます</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            image: null,
+            originalWidth: 0,
+            originalHeight: 0,
+            targetWidth: 0,
+            targetHeight: 0,
+            aspectRatio: true,
+            format: 'image/webp',
+            quality: 0.9,
+            logoEnabled: false,
+            watermarks: [] // Array of { type, x, y, w, h, content, style... } (x,y,w,h in %)
+        };
+
+        // Editor State
+        let activeElementId = null;
+        let isDragging = false;
+        let isResizing = false;
+        let resizeHandle = null;
+        let dragStartX, dragStartY;
+        let initialLeft, initialTop, initialWidth, initialHeight;
+
+        // Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const sizePreset = document.getElementById('size-preset');
+        const customSizeInputs = document.getElementById('custom-size-inputs');
+        const widthInput = document.getElementById('width-input');
+        const heightInput = document.getElementById('height-input');
+        const aspectCheckbox = document.getElementById('aspect-ratio');
+        const formatSelect = document.getElementById('format-select');
+        const canvas = document.getElementById('preview-canvas');
+        const ctx = canvas.getContext('2d');
+        const emptyState = document.getElementById('empty-state');
+        const actionPanel = document.getElementById('action-panel');
+        const qualitySelect = document.getElementById('quality-select');
+        const downloadBtn = document.getElementById('download-btn');
+        const finalSizeLabel = document.getElementById('final-size');
+        const saveSettingsToggle = document.getElementById('save-settings-toggle');
+        const logoToggle = document.getElementById('logo-toggle');
+        const logoSectionContent = document.getElementById('logo-section-content');
+
+        // Modal Elements
+        const openCreatorBtn = document.getElementById('open-creator-btn');
+        const creatorModal = document.getElementById('creator-modal');
+        const cancelCreatorBtn = document.getElementById('cancel-creator-btn');
+        const confirmCreatorBtn = document.getElementById('confirm-creator-btn');
+        const editorWorkspace = document.getElementById('editor-workspace');
+        const previewContainer = document.getElementById('preview-container');
+        const editorBgImage = document.getElementById('editor-bg-image');
+        const overlayLayer = document.getElementById('overlay-layer');
+        const addTextBtn = document.getElementById('add-text-btn');
+        const addImageBtn = document.getElementById('add-image-btn');
+        const logoInput = document.getElementById('logo-input'); // Hidden input for adding images
+
+        // Property Elements
+        const propertiesPanel = document.getElementById('properties-panel');
+        const propertiesEmpty = document.getElementById('properties-empty');
+        const deleteElementBtn = document.getElementById('delete-element-btn');
+        const propTextGroup = document.getElementById('prop-text-group');
+        const propText = document.getElementById('prop-text');
+        const propFontGroup = document.getElementById('prop-font-group');
+        const propFont = document.getElementById('prop-font');
+        const propFontSize = document.getElementById('prop-font-size');
+        const posBtns = document.querySelectorAll('.pos-btn');
+        const propColorGroup = document.getElementById('prop-color-group');
+        const propColor = document.getElementById('prop-color');
+        const propColorHex = document.getElementById('prop-color-hex');
+        const propOpacity = document.getElementById('prop-opacity');
+        const propNeonGroup = document.getElementById('prop-neon-group');
+        const propNeon = document.getElementById('prop-neon');
+        const neonControls = document.getElementById('neon-controls');
+        const propNeonBlur = document.getElementById('prop-neon-blur');
+        const propNeonColor = document.getElementById('prop-neon-color');
+
+        // --- Persistence Logic ---
+
+        function saveState() {
+            if (!saveSettingsToggle.checked) {
+                localStorage.removeItem('easySwapSettings');
+                return;
+            }
+            const settings = {
+                sizePreset: sizePreset.value,
+                targetWidth: state.targetWidth,
+                targetHeight: state.targetHeight,
+                aspectRatio: state.aspectRatio,
+                format: state.format,
+                quality: state.quality,
+                logoEnabled: state.logoEnabled,
+                watermarks: state.watermarks
+            };
+            localStorage.setItem('easySwapSettings', JSON.stringify(settings));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('easySwapSettings');
+            if (saved) {
+                saveSettingsToggle.checked = true;
+                const settings = JSON.parse(saved);
+
+                sizePreset.value = settings.sizePreset || 'original';
+                state.targetWidth = settings.targetWidth || 0;
+                state.targetHeight = settings.targetHeight || 0;
+                state.aspectRatio = settings.aspectRatio !== undefined ? settings.aspectRatio : true;
+                state.format = settings.format || 'image/webp';
+                state.quality = settings.quality || 0.9;
+                state.logoEnabled = settings.logoEnabled || false;
+                state.watermarks = settings.watermarks || [];
+
+                widthInput.value = state.targetWidth;
+                heightInput.value = state.targetHeight;
+                aspectCheckbox.checked = state.aspectRatio;
+                formatSelect.value = state.format;
+                qualitySelect.value = state.quality;
+                logoToggle.checked = state.logoEnabled;
+
+                updateLogoSectionVisibility();
+
+                if (sizePreset.value === 'custom') {
+                    customSizeInputs.classList.remove('hidden');
+                    customSizeInputs.classList.add('grid');
+                }
+            }
+        }
+
+        // --- Main Logic ---
+
+        loadState();
+
+        saveSettingsToggle.addEventListener('change', saveState);
+
+        logoToggle.addEventListener('change', (e) => {
+            state.logoEnabled = e.target.checked;
+            updateLogoSectionVisibility();
+            draw();
+            saveState();
+        });
+
+        function updateLogoSectionVisibility() {
+            if (state.logoEnabled) {
+                logoSectionContent.classList.remove('max-h-0', 'opacity-50', 'pointer-events-none');
+                logoSectionContent.classList.add('max-h-[1000px]', 'opacity-100');
+            } else {
+                logoSectionContent.classList.add('max-h-0', 'opacity-50', 'pointer-events-none');
+                logoSectionContent.classList.remove('max-h-[1000px]', 'opacity-100');
+            }
+        }
+
+        // Save Toggle
+        saveSettingsToggle.addEventListener('change', saveState);
+
+        // Logo Toggle
+        logoToggle.addEventListener('change', (e) => {
+            state.logoEnabled = e.target.checked;
+            updateLogoSectionVisibility();
+            draw();
+            saveState();
+        });
+
+        function updateLogoSectionVisibility() {
+            if (state.logoEnabled) {
+                logoSectionContent.classList.remove('max-h-0', 'opacity-50', 'pointer-events-none');
+                logoSectionContent.classList.add('max-h-[1000px]', 'opacity-100');
+            } else {
+                logoSectionContent.classList.add('max-h-0', 'opacity-50', 'pointer-events-none');
+                logoSectionContent.classList.remove('max-h-[1000px]', 'opacity-100');
+            }
+        }
+
+        // Upload
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-purple-500', 'bg-purple-50');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-purple-500', 'bg-purple-50');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-purple-500', 'bg-purple-50');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        // Size Settings
+        // Size Settings
+        sizePreset.addEventListener('change', () => {
+            const val = sizePreset.value;
+            if (val === 'custom') {
+                customSizeInputs.classList.remove('hidden');
+                customSizeInputs.classList.add('grid');
+            } else if (val === 'original') {
+                customSizeInputs.classList.add('hidden');
+                customSizeInputs.classList.remove('grid');
+                if (state.originalWidth) {
+                    state.targetWidth = state.originalWidth;
+                    state.targetHeight = state.originalHeight;
+                    widthInput.value = state.targetWidth;
+                    heightInput.value = state.targetHeight;
+                    draw();
+                }
+            } else {
+                // Handle "Width,Height" or "Width,auto"
+                customSizeInputs.classList.add('hidden');
+                customSizeInputs.classList.remove('grid');
+
+                if (state.originalWidth) {
+                    const [wStr, hStr] = val.split(',');
+                    state.targetWidth = parseInt(wStr);
+
+                    if (hStr === 'auto') {
+                        state.targetHeight = Math.round(state.targetWidth * (state.originalHeight / state.originalWidth));
+                    } else {
+                        state.targetHeight = parseInt(hStr);
+                    }
+
+                    widthInput.value = state.targetWidth;
+                    heightInput.value = state.targetHeight;
+                    draw();
+                }
+            }
+            saveState();
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('画像ファイルを選択してください。');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    state.originalWidth = img.width;
+                    state.originalHeight = img.height;
+
+                    // Apply preset if selected
+                    const preset = sizePreset.value;
+                    if (preset !== 'custom' && preset !== 'original') {
+                        const [wStr, hStr] = preset.split(',');
+                        state.targetWidth = parseInt(wStr);
+
+                        if (hStr === 'auto') {
+                            state.targetHeight = Math.round(state.targetWidth * (state.originalHeight / state.originalWidth));
+                        } else {
+                            state.targetHeight = parseInt(hStr);
+                        }
+                    } else if (preset === 'original') {
+                        state.targetWidth = img.width;
+                        state.targetHeight = img.height;
+                    } else {
+                        // Custom: use inputs or default to original
+                        state.targetWidth = parseInt(widthInput.value) || img.width;
+                        state.targetHeight = parseInt(heightInput.value) || img.height;
+                    }
+
+                    widthInput.value = state.targetWidth;
+                    heightInput.value = state.targetHeight;
+
+                    emptyState.classList.add('hidden');
+                    actionPanel.classList.remove('hidden');
+                    draw();
+                    updateSizeEstimate();
+                    saveState();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        widthInput.addEventListener('input', () => {
+            state.targetWidth = parseInt(widthInput.value) || 0;
+            if (state.aspectRatio && state.originalWidth) {
+                state.targetHeight = Math.round(state.targetWidth * (state.originalHeight / state.originalWidth));
+                heightInput.value = state.targetHeight;
+            }
+            draw();
+            saveState();
+        });
+        heightInput.addEventListener('input', () => {
+            state.targetHeight = parseInt(heightInput.value) || 0;
+            if (state.aspectRatio && state.originalHeight) {
+                state.targetWidth = Math.round(state.targetHeight * (state.originalWidth / state.originalHeight));
+                widthInput.value = state.targetWidth;
+            }
+            draw();
+            saveState();
+        });
+        aspectCheckbox.addEventListener('change', (e) => {
+            state.aspectRatio = e.target.checked;
+            saveState();
+        });
+
+        // Format & Quality
+        formatSelect.addEventListener('change', (e) => {
+            state.format = e.target.value;
+            if (state.format === 'image/png' || state.format === 'image/gif') {
+                document.getElementById('quality-control').classList.add('opacity-50', 'pointer-events-none');
+            } else {
+                document.getElementById('quality-control').classList.remove('opacity-50', 'pointer-events-none');
+            }
+            updateSizeEstimate();
+            saveState();
+        });
+
+        qualitySelect.addEventListener('change', (e) => {
+            state.quality = parseFloat(e.target.value);
+            updateSizeEstimate();
+            saveState();
+        });
+
+
+        // --- Layout Editor Logic ---
+
+        openCreatorBtn.addEventListener('click', () => {
+            if (!state.image) {
+                alert('まずは画像をアップロードしてください。');
+                return;
+            }
+            creatorModal.classList.remove('hidden');
+            initEditor();
+        });
+
+        cancelCreatorBtn.addEventListener('click', () => {
+            creatorModal.classList.add('hidden');
+        });
+
+        confirmCreatorBtn.addEventListener('click', () => {
+            // Save positions from DOM to state
+            saveEditorToState();
+            draw();
+            creatorModal.classList.add('hidden');
+            saveState();
+        });
+
+        function saveEditorToState() {
+            state.watermarks = [];
+            const elements = overlayLayer.querySelectorAll('.watermark-element');
+            elements.forEach(el => {
+                if (el.dataset.wm) {
+                    try {
+                        const wm = JSON.parse(el.dataset.wm);
+                        state.watermarks.push(wm);
+                    } catch (e) {
+                        console.error('Failed to parse watermark data', e);
+                    }
+                }
+            });
+        }
+
+        function initEditor() {
+            // Set BG
+            editorBgImage.src = state.image.src;
+
+            // Clear Overlay
+            overlayLayer.innerHTML = '';
+
+            // Render existing watermarks
+            state.watermarks.forEach((wm, index) => {
+                const el = createWatermarkElement(wm, index);
+                el.dataset.wm = JSON.stringify(wm);
+            });
+
+            deselectAll();
+        }
+
+        function createWatermarkElement(wm, id) {
+            const el = document.createElement('div');
+            el.className = 'watermark-element';
+            el.dataset.id = id;
+
+            // Initial Style (Percentage to Absolute for Editor)
+            el.style.left = `${wm.x * 100}%`;
+            el.style.top = `${wm.y * 100}%`;
+            el.style.width = `${wm.w * 100}%`;
+            el.style.height = `${wm.h * 100}%`;
+
+            // Content
+            if (wm.type === 'text') {
+                const inner = document.createElement('div');
+                inner.className = 'watermark-text';
+                inner.textContent = wm.content;
+                inner.style.fontFamily = wm.style.font;
+                inner.style.color = wm.style.color;
+                inner.style.opacity = wm.style.opacity;
+                inner.style.fontSize = '100px'; // Base size
+                inner.style.transform = 'scale(1)'; // Placeholder
+
+                el.appendChild(inner);
+                updateTextSize(el, inner);
+            } else if (wm.type === 'image') {
+                const img = document.createElement('img');
+                img.src = wm.content;
+                img.className = 'watermark-image';
+                img.style.opacity = wm.style.opacity;
+                el.appendChild(img);
+            }
+
+            // Handles
+            ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+                const h = document.createElement('div');
+                h.className = `resize-handle handle-${pos}`;
+                h.dataset.handle = pos;
+                el.appendChild(h);
+            });
+
+            // Events
+            el.addEventListener('mousedown', onMouseDown);
+
+            overlayLayer.appendChild(el);
+            return el;
+        }
+
+        function updateTextSize(el, inner) {
+            // Rough approximation to make text fit height
+            requestAnimationFrame(() => {
+                const h = el.getBoundingClientRect().height;
+                if (h > 0) {
+                    inner.style.fontSize = `${h * 0.8}px`;
+                }
+            });
+        }
+
+        // Add Text
+        addTextBtn.addEventListener('click', () => {
+            const wm = {
+                type: 'text',
+                x: 0.4, y: 0.4, w: 0.2, h: 0.1,
+                content: 'Copyright',
+                style: {
+                    font: "'Noto Sans JP', sans-serif",
+                    color: '#ffffff',
+                    opacity: 1.0,
+                    neon: false,
+                    neonBlur: 10,
+                    neonColor: '#00ffff'
+                }
+            };
+            const el = createWatermarkElement(wm, Date.now()); // Use timestamp as temp ID
+            el.dataset.wm = JSON.stringify(wm);
+            selectElement(el);
+        });
+
+        // Add Image
+        addImageBtn.addEventListener('click', () => logoInput.click());
+        logoInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const wm = {
+                        type: 'image',
+                        x: 0.4, y: 0.4, w: 0.2, h: 0.2, // Default square
+                        content: evt.target.result,
+                        style: { opacity: 1.0 }
+                    };
+                    const el = createWatermarkElement(wm, Date.now());
+                    el.dataset.wm = JSON.stringify(wm);
+                    selectElement(el);
+                };
+                reader.readAsDataURL(file);
+            }
+            // Reset input
+            logoInput.value = '';
+        });
+
+        // Selection
+        function selectElement(el) {
+            deselectAll();
+            el.classList.add('selected');
+            activeElementId = el.dataset.id;
+
+            // Show properties
+            propertiesEmpty.classList.add('hidden');
+            propertiesPanel.classList.remove('hidden');
+
+            // Populate properties
+            const wm = JSON.parse(el.dataset.wm || '{}');
+
+            if (wm.type === 'text') {
+                propTextGroup.classList.remove('hidden');
+                propFontGroup.classList.remove('hidden');
+                propColorGroup.classList.remove('hidden');
+                propNeonGroup.classList.remove('hidden');
+
+                propText.value = wm.content;
+                propText.value = wm.content;
+                propFont.value = wm.style.font;
+                // Calculate approximate pt size from height %
+                // h is % of targetHeight. 
+                // font px = h * targetHeight * 0.8
+                // Let's just store/retrieve the 'pt' if we have it, or estimate.
+                // For now, let's just default to 12 or estimate.
+                // Since we don't store 'pt' explicitly yet, we can try to estimate or just show nearest.
+                // Better: store 'pt' in wm.style.fontSizePt if available.
+                if (wm.style.fontSizePt) {
+                    propFontSize.value = wm.style.fontSizePt;
+                } else {
+                    propFontSize.value = "12"; // Default
+                }
+                propColor.value = wm.style.color;
+                propColorHex.textContent = wm.style.color;
+                propOpacity.value = wm.style.opacity;
+                propNeon.checked = wm.style.neon;
+                propNeonBlur.value = wm.style.neonBlur;
+                propNeonColor.value = wm.style.neonColor;
+
+                updateNeonControls();
+            } else {
+                propTextGroup.classList.add('hidden');
+                propFontGroup.classList.add('hidden');
+                propColorGroup.classList.add('hidden');
+                propNeonGroup.classList.add('hidden');
+
+                propOpacity.value = wm.style.opacity;
+            }
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.watermark-element').forEach(el => el.classList.remove('selected'));
+            activeElementId = null;
+            propertiesPanel.classList.add('hidden');
+            propertiesEmpty.classList.remove('hidden');
+        }
+
+        editorWorkspace.addEventListener('mousedown', (e) => {
+            if (e.target === editorWorkspace || e.target === previewContainer || e.target === overlayLayer || e.target === editorBgImage) {
+                deselectAll();
+            }
+        });
+
+        // Delete
+        deleteElementBtn.addEventListener('click', () => {
+            if (activeElementId) {
+                const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+                if (el) el.remove();
+                deselectAll();
+            }
+        });
+
+        // Property Updates
+        function updateActiveElement(key, value, styleKey = false) {
+            if (!activeElementId) return;
+            const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+            if (!el) return;
+
+            const wm = JSON.parse(el.dataset.wm);
+
+            if (styleKey) {
+                wm.style[key] = value;
+            } else {
+                wm[key] = value;
+            }
+
+            el.dataset.wm = JSON.stringify(wm);
+
+            // Update Visuals
+            if (wm.type === 'text') {
+                const inner = el.querySelector('.watermark-text');
+                if (key === 'content') inner.textContent = value;
+                if (styleKey) {
+                    if (key === 'font') inner.style.fontFamily = value;
+                    if (key === 'color') inner.style.color = value;
+                    if (key === 'opacity') inner.style.opacity = value;
+                    // Neon
+                    if (key === 'neon' || key === 'neonBlur' || key === 'neonColor') {
+                        if (wm.style.neon) {
+                            inner.style.textShadow = `0 0 ${wm.style.neonBlur}px ${wm.style.neonColor}`;
+                        } else {
+                            inner.style.textShadow = 'none';
+                        }
+                    }
+                }
+            } else {
+                const img = el.querySelector('.watermark-image');
+                if (styleKey && key === 'opacity') img.style.opacity = value;
+            }
+        }
+
+        propText.addEventListener('input', (e) => updateActiveElement('content', e.target.value));
+        propFont.addEventListener('change', (e) => updateActiveElement('font', e.target.value, true));
+        propFontSize.addEventListener('change', (e) => {
+            const pt = parseInt(e.target.value);
+            updateActiveElement('fontSizePt', pt, true);
+
+            // Update height based on pt
+            // 1pt approx 1.33px. Let's assume 1pt = 1.33px for screen, but for image?
+            // Let's treat 'pt' as a relative size unit where 12pt is "standard".
+            // If we assume 1920px width is "standard screen", maybe 12pt is ~16px?
+            // Let's use a simple multiplier. 
+            // If we want 20pt to be visible on 1920px image, it should be around 26px height?
+            // Let's say heightPx = pt * 1.5 (arbitrary but reasonable for display).
+            // Actually, let's just use the value as px directly scaled.
+            // If user selects 20, we make the box height such that font size is 20px (relative to image).
+            // ctx.font = h * 0.8. So h = fontSize / 0.8.
+            // If fontSize = 20px, h = 25px.
+            // So we set height % = 25 / targetHeight.
+
+            if (activeElementId && state.targetHeight > 0) {
+                const hPx = pt / 0.8;
+                const hPct = hPx / state.targetHeight;
+
+                // We also need to adjust width to maintain aspect ratio of text
+                // But text width is dynamic. 
+                // We update height, and let the width auto-adjust? 
+                // Currently width is manual.
+                // For text, we usually want auto-width.
+                // Let's update height, and then force a redraw/remeasure?
+
+                const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+                if (el) {
+                    const wm = JSON.parse(el.dataset.wm);
+                    wm.h = hPct;
+                    wm.style.fontSizePt = pt;
+                    el.dataset.wm = JSON.stringify(wm);
+                    el.style.height = `${hPct * 100}%`;
+
+                    // Auto-width adjustment for text
+                    const inner = el.querySelector('.watermark-text');
+                    if (inner) {
+                        updateTextSize(el, inner);
+                        // We might need to adjust width to fit text?
+                        // For now, let's just set height. The text might overflow width if width is too small.
+                        // Ideally we should expand width.
+                        // Let's leave width as is for now, user can resize.
+                    }
+                }
+            }
+        });
+
+        // Position Buttons
+        posBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pos = btn.dataset.pos;
+                if (!activeElementId) return;
+                const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+                if (!el) return;
+
+                const wm = JSON.parse(el.dataset.wm);
+                // Calculate new x, y based on pos
+                // We need current w, h (in %)
+                const w = wm.w;
+                const h = wm.h;
+
+                let newX = wm.x;
+                let newY = wm.y;
+
+                // Margin from edge (e.g. 5%)
+                const margin = 0.05;
+
+                switch (pos) {
+                    case 'tl': newX = margin; newY = margin; break;
+                    case 'tc': newX = 0.5 - w / 2; newY = margin; break;
+                    case 'tr': newX = 1 - w - margin; newY = margin; break;
+                    case 'c': newX = 0.5 - w / 2; newY = 0.5 - h / 2; break;
+                    case 'bl': newX = margin; newY = 1 - h - margin; break;
+                    case 'bc': newX = 0.5 - w / 2; newY = 1 - h - margin; break;
+                    case 'br': newX = 1 - w - margin; newY = 1 - h - margin; break;
+                }
+
+                // Update
+                wm.x = newX;
+                wm.y = newY;
+                el.dataset.wm = JSON.stringify(wm);
+                el.style.left = `${newX * 100}%`;
+                el.style.top = `${newY * 100}%`;
+            });
+        });
+        propColor.addEventListener('input', (e) => {
+            propColorHex.textContent = e.target.value;
+            updateActiveElement('color', e.target.value, true);
+        });
+        propOpacity.addEventListener('input', (e) => updateActiveElement('opacity', e.target.value, true));
+
+        propNeon.addEventListener('change', (e) => {
+            updateNeonControls();
+            updateActiveElement('neon', e.target.checked, true);
+        });
+        propNeonBlur.addEventListener('input', (e) => updateActiveElement('neonBlur', e.target.value, true));
+        propNeonColor.addEventListener('input', (e) => updateActiveElement('neonColor', e.target.value, true));
+
+        function updateNeonControls() {
+            if (propNeon.checked) {
+                neonControls.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                neonControls.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // Drag & Resize Logic
+        function onMouseDown(e) {
+            if (e.target.classList.contains('resize-handle')) {
+                isResizing = true;
+                resizeHandle = e.target.dataset.handle;
+            } else {
+                isDragging = true;
+                selectElement(e.currentTarget);
+            }
+
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            const el = e.currentTarget.closest('.watermark-element') || e.currentTarget;
+            const rect = el.getBoundingClientRect();
+            const parentRect = overlayLayer.getBoundingClientRect();
+
+            initialLeft = rect.left - parentRect.left;
+            initialTop = rect.top - parentRect.top;
+            initialWidth = rect.width;
+            initialHeight = rect.height;
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            e.stopPropagation();
+        }
+
+        function onMouseMove(e) {
+            if (!activeElementId) return;
+            const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+            if (!el) return;
+
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            const parentRect = overlayLayer.getBoundingClientRect();
+
+            if (isDragging) {
+                let newLeft = initialLeft + dx;
+                let newTop = initialTop + dy;
+
+                // Convert to %
+                const leftPct = newLeft / parentRect.width;
+                const topPct = newTop / parentRect.height;
+
+                el.style.left = `${leftPct * 100}%`;
+                el.style.top = `${topPct * 100}%`;
+            } else if (isResizing) {
+                let newW = initialWidth;
+                let newH = initialHeight;
+                let newL = initialLeft;
+                let newT = initialTop;
+
+                if (resizeHandle.includes('r')) newW = initialWidth + dx;
+                if (resizeHandle.includes('l')) {
+                    newW = initialWidth - dx;
+                    newL = initialLeft + dx;
+                }
+                if (resizeHandle.includes('b')) newH = initialHeight + dy;
+                if (resizeHandle.includes('t')) {
+                    newH = initialHeight - dy;
+                    newT = initialTop + dy;
+                }
+
+                // Min size
+                if (newW < 20) newW = 20;
+                if (newH < 20) newH = 20;
+
+                el.style.width = `${(newW / parentRect.width) * 100}%`;
+                el.style.height = `${(newH / parentRect.height) * 100}%`;
+                if (resizeHandle.includes('l')) el.style.left = `${(newL / parentRect.width) * 100}%`;
+                if (resizeHandle.includes('t')) el.style.top = `${(newT / parentRect.height) * 100}%`;
+
+                // Update text size if text
+                if (el.querySelector('.watermark-text')) {
+                    updateTextSize(el, el.querySelector('.watermark-text'));
+                }
+            }
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            isResizing = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            // Update stored WM data with new positions (as %)
+            if (activeElementId) {
+                const el = document.querySelector(`.watermark-element[data-id="${activeElementId}"]`);
+                if (el) {
+                    const wm = JSON.parse(el.dataset.wm);
+                    const style = el.style;
+                    wm.x = parseFloat(style.left) / 100;
+                    wm.y = parseFloat(style.top) / 100;
+                    wm.w = parseFloat(style.width) / 100;
+                    wm.h = parseFloat(style.height) / 100;
+                    el.dataset.wm = JSON.stringify(wm);
+                }
+            }
+        }
+
+        // --- Drawing ---
+
+        function draw() {
+            if (!state.image) return;
+
+            // Set canvas size
+            canvas.width = state.targetWidth;
+            canvas.height = state.targetHeight;
+
+            // Draw main image
+            ctx.drawImage(state.image, 0, 0, state.targetWidth, state.targetHeight);
+
+            // Draw Watermarks
+            if (state.logoEnabled && state.watermarks.length > 0) {
+                state.watermarks.forEach(wm => {
+                    const x = wm.x * state.targetWidth;
+                    const y = wm.y * state.targetHeight;
+                    const w = wm.w * state.targetWidth;
+                    const h = wm.h * state.targetHeight;
+
+                    ctx.save();
+
+                    if (wm.type === 'text') {
+                        // Text drawing
+                        ctx.globalAlpha = wm.style.opacity;
+                        ctx.fillStyle = wm.style.color;
+                        ctx.font = `400 ${h * 0.8}px ${wm.style.font.replace(/'/g, '')}`; // Approx height
+                        ctx.textBaseline = 'middle';
+                        ctx.textAlign = 'center';
+
+                        // Neon
+                        if (wm.style.neon) {
+                            ctx.shadowBlur = wm.style.neonBlur;
+                            ctx.shadowColor = wm.style.neonColor;
+                        }
+
+                        // Center of the box
+                        const cx = x + w / 2;
+                        const cy = y + h / 2;
+
+                        ctx.fillText(wm.content, cx, cy);
+                    } else if (wm.type === 'image') {
+                        // Image drawing
+                        const img = new Image();
+                        img.src = wm.content;
+                        // Note: Image loading is async. If it's not cached, it might blink.
+                        // But since we loaded it in the editor, it should be in memory/cache.
+                        // For robustness, we should pre-load or check.
+                        // `drawImage` handles it if loaded.
+                        ctx.globalAlpha = wm.style.opacity;
+                        ctx.drawImage(img, x, y, w, h);
+                    }
+
+                    ctx.restore();
+                });
+            }
+
+            // Update info
+            finalSizeLabel.textContent = `${state.targetWidth} x ${state.targetHeight}`;
+            updateSizeEstimate();
+        }
+
+        let sizeTimeout;
+        function updateSizeEstimate() {
+            clearTimeout(sizeTimeout);
+            sizeTimeout = setTimeout(() => {
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const mb = blob.size / (1024 * 1024);
+                        document.getElementById('final-size-mb').textContent = mb.toFixed(2) + ' MB';
+                    }
+                }, state.format, state.quality);
+            }, 300);
+        }
+
+        // Download
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            let ext = state.format.split('/')[1];
+            if (ext === 'jpeg') ext = 'jpg';
+            link.download = `processed_image.${ext}`;
+            link.href = canvas.toDataURL(state.format, state.quality);
+            link.click();
+        });
+    </script>
+</body>
+
+</html>
