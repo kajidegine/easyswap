@@ -108,16 +108,14 @@
             cursor: move;
             user-select: none;
             box-sizing: border-box;
-            /* Border for hover/selection */
-            border: 1px solid transparent;
         }
 
         .watermark-element:hover {
-            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: inset 0 0 0 2px rgba(139, 92, 246, 0.5);
         }
 
         .watermark-element.selected {
-            border-color: #8b5cf6;
+            box-shadow: inset 0 0 0 2px #8b5cf6;
             z-index: 10;
         }
 
